@@ -203,8 +203,24 @@ input[type="range"]::-moz-range-thumb {
     letter-spacing: 1px;
 }
 
+.track-display {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.album-art {
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    flex-shrink: 0;
+}
+
 .track-info {
-    margin-bottom: 8px;
+    flex: 1;
+    min-width: 0;
 }
 
 .track-title {

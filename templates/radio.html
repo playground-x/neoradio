@@ -21,12 +21,15 @@
 
             <div class="now-playing">
                 <h3>Now Playing</h3>
-                <div class="track-info">
-                    <div class="track-title" id="trackTitle">Waiting for track info...</div>
-                    <div class="track-artist" id="trackArtist">-</div>
-                    <div class="track-details">
-                        <span id="trackAlbum">-</span>
-                        <span id="trackYear">-</span>
+                <div class="track-display">
+                    <img id="albumArt" class="album-art" src="https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg" alt="Album Art">
+                    <div class="track-info">
+                        <div class="track-title" id="trackTitle">Waiting for track info...</div>
+                        <div class="track-artist" id="trackArtist">-</div>
+                        <div class="track-details">
+                            <span id="trackAlbum">-</span>
+                            <span id="trackYear">-</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -500,10 +503,17 @@
             document.getElementById('trackAlbum').textContent = track.album;
             document.getElementById('trackYear').textContent = track.year;
 
-            // Add to history if it's a new track
-            if (!currentTrack || currentTrack.title !== track.title || currentTrack.artist !== track.artist) {
+            // Only add to history if we have actual track data (not default placeholder values)
+            const hasRealData = trackData.title || trackData.artist;
+
+            // Add to history if it's a new track and has real data
+            if (hasRealData && (!currentTrack || currentTrack.title !== track.title || currentTrack.artist !== track.artist)) {
                 currentTrack = track;
                 addToHistory(track);
+
+                // Refresh album art with cache-busting timestamp
+                const albumArt = document.getElementById('albumArt');
+                albumArt.src = `https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg?t=${Date.now()}`;
             }
         }
 
@@ -577,6 +587,24 @@
             document.getElementById('sampleRate').textContent = '48 kHz';
             document.getElementById('channels').textContent = 'Stereo (2.0)';
         }
+
+        // Load initial track metadata on page load
+        async function loadInitialMetadata() {
+            try {
+                const response = await fetch('/api/metadata');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.data) {
+                        parseAPIMetadata(data.data);
+                    }
+                }
+            } catch (error) {
+                console.log('Could not load initial metadata:', error);
+            }
+        }
+
+        // Load metadata when page loads
+        loadInitialMetadata();
     </script>
 </body>
 </html>
