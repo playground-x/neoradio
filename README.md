@@ -59,109 +59,13 @@ python app.py
 
 The server will start at: **http://127.0.0.1:5000**
 
-## Project Structure
+## Features
 
-```
-neoradio/
-├── app.py                      # Main Flask application
-├── requirements.txt            # Python dependencies
-├── database.db                 # SQLite database (auto-created)
-├── CLAUDE.md                   # Detailed project documentation
-├── README.md                   # This file
-├── templates/
-│   └── radio.html             # Radio player interface
-└── static/
-    ├── css/
-    │   └── radio.css          # Player styling
-    └── js/
-        └── radio.js           # Player functionality
-```
-
-## API Endpoints
-
-### Metadata
-- `GET /api/metadata` - Fetch current track metadata from stream
-
-### Song Ratings
-- `POST /api/songs/rating` - Submit or update a song rating
-  ```json
-  {
-    "title": "Song Title",
-    "artist": "Artist Name",
-    "album": "Album Name",
-    "year": "2025",
-    "rating": 1  // 1 for thumbs up, -1 for thumbs down
-  }
-  ```
-
-- `GET /api/songs/rating/<title>/<artist>` - Get rating counts and user's rating
-  ```json
-  {
-    "thumbs_up": 42,
-    "thumbs_down": 7,
-    "user_rating": 1  // null if user hasn't rated
-  }
-  ```
-
-## Database Schema
-
-### Songs Table
-- `id` - Primary key
-- `title` - Song title
-- `artist` - Artist name
-- `album` - Album name
-- `year` - Release year
-- UNIQUE constraint on (title, artist)
-
-### Ratings Table
-- `id` - Primary key
-- `song_id` - Foreign key to songs
-- `user_id` - SHA256 hash of IP + User-Agent
-- `rating` - 1 (thumbs up) or -1 (thumbs down)
-- `created_at` - Timestamp
-- UNIQUE constraint on (song_id, user_id)
-
-## Technology Stack
-
-- **Backend:** Flask 3.1.2
-- **Database:** SQLite
-- **Frontend:** Vanilla JavaScript, CSS Grid
-- **Streaming:** HLS.js for audio playback
-- **HTTP Client:** Requests 2.32.5
-
-## Configuration
-
-### Stream URL
-The stream URL is configured in `static/js/radio.js`:
-```javascript
-const streamUrl = 'https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8';
-```
-
-### Metadata API
-Metadata is fetched from:
-```
-https://d3d4yli4hf5bmh.cloudfront.net/metadatav2.json
-```
-
-### Secret Key
-**Important:** Change the Flask secret key in production!
-```python
-# app.py
-app.secret_key = 'neoradio-secret-key-change-in-production'
-```
-
-## User Identification
-
-The rating system uses IP-based fingerprinting to prevent duplicate votes:
-1. Extracts client IP (handles X-Forwarded-For for proxies)
-2. Combines with User-Agent string
-3. Creates SHA256 hash for privacy
-4. Uses first 32 characters as user_id
-
-This approach:
-- Prevents cookie clearing exploits
-- Maintains user privacy through hashing
-- Persists across browser sessions
+- Flask web framework
+- SQLite database (no separate database server needed)
+- RESTful API endpoints
+- Automatic database initialisation
+- Interactive web UI for testing
 
 ## Development
 
