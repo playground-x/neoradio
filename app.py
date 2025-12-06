@@ -42,6 +42,32 @@ def index():
     """Home page"""
     return render_template('index.html')
 
+@app.route('/radio')
+def radio():
+    """Radio player page"""
+    return render_template('radio.html')
+
+@app.route('/api/metadata')
+def get_metadata():
+    """Fetch current track metadata from stream"""
+    import requests
+    try:
+        # Fetch metadata from metadatav2.json at the stream host
+        metadata_url = 'https://d3d4yli4hf5bmh.cloudfront.net/metadatav2.json'
+        response = requests.get(metadata_url, timeout=5)
+
+        if response.status_code == 200:
+            data = response.json()
+            return jsonify({
+                'source': metadata_url,
+                'data': data
+            })
+        else:
+            return jsonify({'error': f'HTTP {response.status_code}'}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/users', methods=['GET', 'POST'])
 def users():
     """Get all users or create a new user"""
