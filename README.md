@@ -89,8 +89,7 @@ neoradio/
 - Flask web framework
 - SQLite database (no separate database server needed)
 - RESTful API endpoints
-- Automatic database initialization
-- Debug mode enabled for development
+- Automatic database initialisation
 - Interactive web UI for testing
 
 ## Development
