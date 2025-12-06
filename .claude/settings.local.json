@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init:*)",
+      "Bash(node --version:*)",
+      "Bash(npm:*)",
+      "Bash(python -m venv:*)",
+      "Bash(venv\\Scripts\\pip install:*)",
+      "Bash(venv/Scripts/pip install:*)",
+      "Bash(python app.py:*)",
+      "Bash(pip install:*)",
+      "Bash(python -m pip install:*)",
+      "Bash(python -m pip:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
