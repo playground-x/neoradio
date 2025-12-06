@@ -1,0 +1,67 @@
+# Docker Compose configuration for NeoRadio
+# Usage:
+#   Development: docker-compose up dev
+#   Production:  docker-compose up prod
+
+version: '3.8'
+
+services:
+  # Development service
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: neoradio-dev
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount source code for hot reload
+      - ./app.py:/app/app.py
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./tests:/app/tests
+      # Persist database
+      - neoradio-dev-data:/app/data
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - DATABASE=/app/data/database.db
+    restart: unless-stopped
+    networks:
+      - neoradio-network
+
+  # Production service
+  prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neoradio-prod
+    ports:
+      - "8080:5000"
+    volumes:
+      # Only persist database, not source code
+      - neoradio-prod-data:/app/data
+    environment:
+      - FLASK_ENV=production
+      - DATABASE=/app/data/database.db
+      - SECRET_KEY=${SECRET_KEY:-please-change-this-secret-key-in-production}
+    restart: always
+    networks:
+      - neoradio-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/metadata"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  neoradio-dev-data:
+    name: neoradio-dev-data
+  neoradio-prod-data:
+    name: neoradio-prod-data
+
+networks:
+  neoradio-network:
+    name: neoradio-network
+    driver: bridge

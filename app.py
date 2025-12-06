@@ -4,10 +4,10 @@ import os
 
 app = Flask(__name__)
 # Secret key for sessions - needed to track user ratings
-app.secret_key = 'neoradio-secret-key-change-in-production'
+app.secret_key = os.environ.get('SECRET_KEY', 'neoradio-secret-key-change-in-production')
 
 # Database configuration
-DATABASE = 'database.db'
+DATABASE = os.environ.get('DATABASE', 'database.db')
 
 def get_db_connection():
     """Create a database connection"""
@@ -61,10 +61,6 @@ def init_db():
     conn.close()
 
 @app.route('/')
-def index():
-    """Home page"""
-    return render_template('index.html')
-
 @app.route('/radio')
 def radio():
     """Radio player page"""
