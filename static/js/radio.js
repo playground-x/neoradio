@@ -393,6 +393,12 @@ function updateTrackInfo(trackData) {
         // Refresh album art with cache-busting timestamp
         const albumArt = document.getElementById('albumArt');
         albumArt.src = `https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg?t=${Date.now()}`;
+
+        // Load rating for this track
+        loadSongRating(track.title, track.artist);
+    } else if (hasRealData) {
+        // Even if not new, load rating on initial load
+        loadSongRating(track.title, track.artist);
     }
 }
 
@@ -484,3 +490,68 @@ async function loadInitialMetadata() {
 
 // Load metadata when page loads
 loadInitialMetadata();
+
+// Rating functionality
+async function rateSong(rating) {
+    if (!currentTrack || currentTrack.title === 'Live Stream') {
+        alert('Please wait for track information to load before rating.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/songs/rating', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: currentTrack.title,
+                artist: currentTrack.artist,
+                album: currentTrack.album,
+                year: currentTrack.year,
+                rating: rating
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            updateRatingDisplay(data.thumbs_up, data.thumbs_down, rating);
+        } else {
+            console.error('Failed to submit rating');
+        }
+    } catch (error) {
+        console.error('Error submitting rating:', error);
+    }
+}
+
+async function loadSongRating(title, artist) {
+    try {
+        const response = await fetch(`/api/songs/rating/${encodeURIComponent(title)}/${encodeURIComponent(artist)}`);
+        if (response.ok) {
+            const data = await response.json();
+            updateRatingDisplay(data.thumbs_up, data.thumbs_down, data.user_rating);
+        }
+    } catch (error) {
+        console.error('Error loading rating:', error);
+        updateRatingDisplay(0, 0, null);
+    }
+}
+
+function updateRatingDisplay(thumbsUp, thumbsDown, userRating) {
+    document.getElementById('thumbsUpCount').textContent = thumbsUp;
+    document.getElementById('thumbsDownCount').textContent = thumbsDown;
+
+    const thumbsUpBtn = document.getElementById('thumbsUpBtn');
+    const thumbsDownBtn = document.getElementById('thumbsDownBtn');
+
+    // Remove active class from both
+    thumbsUpBtn.classList.remove('active');
+    thumbsDownBtn.classList.remove('active');
+
+    // Add active class to user's rating
+    if (userRating === 1) {
+        thumbsUpBtn.classList.add('active');
+    } else if (userRating === -1) {
+        thumbsDownBtn.classList.add('active');
+    }
+}
