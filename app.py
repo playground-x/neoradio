@@ -62,11 +62,6 @@ def init_db():
 
 @app.route('/')
 def index():
-    """Home page"""
-    return render_template('index.html')
-
-@app.route('/radio')
-def radio():
     """Radio player page"""
     return render_template('radio.html')
 
