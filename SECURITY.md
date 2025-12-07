@@ -154,38 +154,49 @@ SECURITY SCAN SUMMARY
 
 ## Integration with CI/CD
 
-### GitHub Actions Example
+### GitHub Actions (Automated)
+
+NeoRadio includes **two automated GitHub Actions workflows** that run security scans:
+
+#### 1. CI Workflow (`.github/workflows/ci.yml`)
+Runs on every push and pull request:
+- ✅ Unit tests with pytest
+- ✅ npm audit for Node.js dependencies
+- ✅ Python security scanner
+- ✅ Code quality checks (flake8, black, isort)
+- ✅ Docker build validation
+
+**Status:** [![CI - Tests and Security](https://github.com/playground-x/neoradio/actions/workflows/ci.yml/badge.svg)](https://github.com/playground-x/neoradio/actions/workflows/ci.yml)
+
+#### 2. Security Scan Workflow (`.github/workflows/security-scan.yml`)
+Runs weekly (Monday 9 AM UTC) and on dependency changes:
+- ✅ Comprehensive Python security (Safety + Bandit)
+- ✅ npm audit with detailed reports
+- ✅ CodeQL semantic analysis
+- ✅ Dependency review (for PRs)
+- 📊 Artifact reports (90-day retention)
+
+**Status:** [![Security Scan](https://github.com/playground-x/neoradio/actions/workflows/security-scan.yml/badge.svg)](https://github.com/playground-x/neoradio/actions/workflows/security-scan.yml)
+
+#### Viewing Results
+1. Go to repository → **Actions** tab
+2. Select workflow run
+3. Download security reports from **Artifacts** section
+4. View CodeQL results in **Security** → **Code scanning**
+
+See [.github/workflows/README.md](.github/workflows/README.md) for complete CI/CD documentation.
+
+### Manual CI/CD Integration Example
+
+For other CI/CD platforms (GitLab CI, Jenkins, etc.):
 
 ```yaml
-name: Security Scan
-
-on: [push, pull_request]
-
-jobs:
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          npm install
-
-      - name: Run security scans
-        run: |
-          npm run security
-          python security_scan.py
+security-scan:
+  script:
+    - pip install -r requirements.txt
+    - npm install
+    - npm run security
+    - python security_scan.py
 ```
 
 ## Troubleshooting

@@ -2,6 +2,9 @@
 
 A Flask-based web server with SQLite database for local prototyping.
 
+[![CI - Tests and Security](https://github.com/playground-x/neoradio/actions/workflows/ci.yml/badge.svg)](https://github.com/playground-x/neoradio/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/playground-x/neoradio/actions/workflows/security-scan.yml/badge.svg)](https://github.com/playground-x/neoradio/actions/workflows/security-scan.yml)
+
 ## Setup
 
 ### 1. Activate Virtual Environment
