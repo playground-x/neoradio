@@ -1,12 +1,10 @@
 # Docker Compose configuration for NeoRadio
 # Usage:
 #   Development: docker-compose up dev
-#   Production:  docker-compose up prod
-
-version: '3.8'
+#   Production:  docker-compose up prod nginx postgres
 
 services:
-  # Development service
+  # Development service (SQLite)
   dev:
     build:
       context: .
@@ -30,7 +28,72 @@ services:
     networks:
       - neoradio-network
 
-  # Production service
+  # PostgreSQL database (production only)
+  postgres:
+    image: postgres:16-alpine
+    container_name: neoradio-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-neoradio}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-neoradio_password}
+      - POSTGRES_DB=${POSTGRES_DB:-neoradio}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - neoradio-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-neoradio}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  # Flask application (production)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neoradio-app
+    expose:
+      - "5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-please-change-this-secret-key-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-neoradio}:${POSTGRES_PASSWORD:-neoradio_password}@postgres:5432/${POSTGRES_DB:-neoradio}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - neoradio-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/metadata"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Nginx reverse proxy (production)
+  nginx:
+    image: nginx:alpine
+    container_name: neoradio-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./static:/app/static:ro
+    depends_on:
+      - app
+    networks:
+      - neoradio-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # Production service (legacy - kept for backward compatibility)
   prod:
     build:
       context: .
@@ -39,7 +102,6 @@ services:
     ports:
       - "8080:5000"
     volumes:
-      # Only persist database, not source code
       - neoradio-prod-data:/app/data
     environment:
       - FLASK_ENV=production
@@ -60,6 +122,8 @@ volumes:
     name: neoradio-dev-data
   neoradio-prod-data:
     name: neoradio-prod-data
+  postgres-data:
+    name: neoradio-postgres-data
 
 networks:
   neoradio-network:

@@ -23,23 +23,24 @@ A modern web-based radio player for streaming HLS (HTTP Live Streaming) audio wi
 
 ### Docker (Recommended)
 
-**Development:**
+**Development with SQLite:**
 ```bash
 docker-compose up dev
 ```
 Access at: http://localhost:5000/radio
 
-**Production:**
+**Production with PostgreSQL + Nginx:**
 ```bash
-# Set secret key
-echo "SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')" > .env
+# 1. Configure environment
+cp .env.example .env
+# Edit .env with your SECRET_KEY and POSTGRES_PASSWORD
 
-# Start production server
-docker-compose up prod
+# 2. Start all production services
+docker-compose up -d postgres app nginx
 ```
-Access at: http://localhost:8080/radio
+Access at: http://localhost/radio
 
-See [DOCKER.md](DOCKER.md) for complete Docker deployment guide.
+See [DOCKER.md](DOCKER.md) for complete deployment guide including database migration and configuration options.
 
 ### Local Development
 
@@ -77,12 +78,23 @@ neoradio/
 │   └── test_user_identification.py  # User ID tests
 ├── Dockerfile                  # Production Docker image
 ├── Dockerfile.dev              # Development Docker image
-├── docker-compose.yml          # Docker orchestration
+├── docker-compose.yml          # Docker orchestration (dev + prod stacks)
 ├── .dockerignore              # Docker build exclusions
+├── .env.example               # Environment variable template
+├── init-db.sql                # PostgreSQL initialization script
+├── nginx.conf                 # Nginx reverse proxy configuration
 ├── pytest.ini                 # Test configuration
 ├── DOCKER.md                  # Docker deployment guide
 ├── CLAUDE.md                  # Technical documentation
 └── README.md                  # This file
+```
+
+## Technology Stack
+
+- **Backend:** Flask 3.1.2, SQLite/PostgreSQL (dual database support)
+- **Frontend:** Vanilla JavaScript, HLS.js, CSS Grid
+- **Deployment:** Docker, Docker Compose, Nginx, Gunicorn
+- **Testing:** pytest (29 tests, 73% coverage)
 ```
 
 ## API Endpoints
@@ -144,29 +156,38 @@ Get rating counts and user's rating for a song
 
 ## Database Schema
 
+NeoRadio supports both SQLite (development) and PostgreSQL (production) with identical schema.
+
 ### songs
 | Column | Type | Description |
 |--------|------|-------------|
-| id | INTEGER | Primary key |
+| id | SERIAL/AUTOINCREMENT | Primary key |
 | title | TEXT | Song title |
 | artist | TEXT | Artist name |
-| album | TEXT | Album name |
-| year | TEXT | Release year |
+| album | TEXT | Album name (optional) |
+| year | TEXT | Release year (optional) |
 
 **Constraints:** UNIQUE(title, artist)
 
 ### ratings
 | Column | Type | Description |
 |--------|------|-------------|
-| id | INTEGER | Primary key |
+| id | SERIAL/AUTOINCREMENT | Primary key |
 | song_id | INTEGER | Foreign key to songs.id |
 | user_id | TEXT | SHA256 hash of IP + User-Agent |
 | rating | INTEGER | 1 (thumbs up) or -1 (thumbs down) |
 | created_at | TIMESTAMP | Rating timestamp |
 
 **Constraints:**
-- UNIQUE(song_id, user_id)
-- CHECK(rating IN (1, -1))
+- UNIQUE(song_id, user_id) - Prevents duplicate ratings
+- CHECK(rating IN (1, -1)) - Enforces valid rating values
+- Foreign key cascade on delete
+
+**PostgreSQL Performance Indexes:**
+- `idx_ratings_song_id` on `ratings.song_id`
+- `idx_ratings_user_id` on `ratings.user_id`
+- `idx_songs_artist` on `songs.artist`
+- `idx_songs_title` on `songs.title`
 
 ## User Identification
 

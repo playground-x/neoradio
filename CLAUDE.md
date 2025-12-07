@@ -10,7 +10,8 @@ NeoRadio is a Flask-based web application that provides a sleek, dark-themed int
 
 ### Backend
 - **Flask 3.1.2** - Python web framework
-- **SQLite** - Database for storing songs and ratings
+- **SQLite / PostgreSQL** - Dual database support (SQLite for dev, PostgreSQL for production)
+- **psycopg2-binary 2.9.9** - PostgreSQL adapter for Python
 - **Requests 2.32.5** - HTTP library for fetching stream metadata
 - **Gunicorn 21.2.0** - WSGI HTTP server for production
 
@@ -26,6 +27,8 @@ NeoRadio is a Flask-based web application that provides a sleek, dark-themed int
 ### Deployment
 - **Docker** - Containerization platform
 - **Docker Compose** - Multi-container orchestration
+- **Nginx** - Reverse proxy and static file server (production)
+- **PostgreSQL 16** - Production database (Alpine-based)
 
 ## Architecture
 
@@ -53,6 +56,8 @@ neoradio/
 ├── docker-compose.yml          # Docker orchestration
 ├── .dockerignore              # Docker build exclusions
 ├── .env.example               # Environment variable template
+├── init-db.sql                # PostgreSQL initialization script
+├── nginx.conf                 # Nginx reverse proxy configuration
 ├── pytest.ini                 # pytest configuration
 ├── DOCKER.md                  # Docker deployment guide
 ├── CLAUDE.md                  # Technical documentation (this file)
@@ -61,8 +66,10 @@ neoradio/
 
 ### Database Schema
 
+Supports both SQLite (development) and PostgreSQL (production) with identical schema:
+
 **songs** table:
-- `id` (INTEGER PRIMARY KEY)
+- `id` (SERIAL/AUTOINCREMENT PRIMARY KEY)
 - `title` (TEXT NOT NULL)
 - `artist` (TEXT NOT NULL)
 - `album` (TEXT)
@@ -70,12 +77,18 @@ neoradio/
 - UNIQUE constraint on (title, artist)
 
 **ratings** table:
-- `id` (INTEGER PRIMARY KEY)
+- `id` (SERIAL/AUTOINCREMENT PRIMARY KEY)
 - `song_id` (INTEGER, FK to songs.id)
 - `user_id` (TEXT) - SHA256 hash of IP + User-Agent
 - `rating` (INTEGER) - 1 for thumbs up, -1 for thumbs down
 - `created_at` (TIMESTAMP)
 - UNIQUE constraint on (song_id, user_id)
+
+PostgreSQL includes performance indexes on:
+- `ratings.song_id`
+- `ratings.user_id`
+- `songs.artist`
+- `songs.title`
 
 ## Key Features
 
@@ -142,6 +155,53 @@ This approach:
 - Persists across browser sessions
 - Requires IP/browser change to bypass
 
+## Database Abstraction Layer
+
+NeoRadio implements a database abstraction layer to support both SQLite (development) and PostgreSQL (production) seamlessly.
+
+### Database Selection ([app.py:10-27](app.py#L10-L27))
+- **SQLite Mode:** Used when `DATABASE_URL` environment variable is not set
+- **PostgreSQL Mode:** Activated when `DATABASE_URL` is defined (e.g., `postgresql://user:pass@host:5432/db`)
+
+### Core Abstraction Function: `execute_query()` ([app.py:29-76](app.py#L29-L76))
+
+Handles all database operations with automatic adaptation:
+
+```python
+execute_query(conn, query, params=None, fetch_one=False, fetch_all=False)
+```
+
+**Features:**
+- **Cursor Management:** Automatically creates cursors for both databases
+  - SQLite: Standard cursor with `Row` factory
+  - PostgreSQL: `RealDictCursor` for dict-like row access
+- **Placeholder Conversion:** Converts `?` (SQLite) to `%s` (PostgreSQL)
+- **Conflict Handling:** Translates `INSERT OR IGNORE` to `INSERT ... ON CONFLICT DO NOTHING`
+- **Consistent Returns:** Returns dictionaries for both databases
+
+### Transaction Handling ([app.py:253-261](app.py#L253-L261))
+
+PostgreSQL requires explicit transaction rollback after integrity errors:
+
+```python
+try:
+    execute_query(conn, 'INSERT INTO ratings ...', params)
+    conn.commit()
+except IntegrityError:
+    conn.rollback()  # Required for PostgreSQL
+    execute_query(conn, 'UPDATE ratings ...', params)
+    conn.commit()
+```
+
+### Database Initialization ([app.py:297-321](app.py#L297-L321))
+
+Uses Flask's `@app.before_request` hook to initialize database on first request:
+
+- **PostgreSQL:** Runs `init_db()` which executes schema with `CREATE TABLE IF NOT EXISTS`
+- **SQLite:** Checks if tables exist before initializing
+
+This ensures compatibility with both Flask dev server (with reloader) and Gunicorn.
+
 ## Docker Architecture
 
 NeoRadio supports containerized deployment with separate configurations for development and production.
@@ -150,9 +210,10 @@ NeoRadio supports containerized deployment with separate configurations for deve
 
 #### Production (`Dockerfile`)
 - **Base:** `python:3.11-slim` (Debian Trixie)
+- **Dependencies:** curl, libpq-dev (for PostgreSQL support)
 - **Server:** Gunicorn with 4 workers
 - **User:** Non-root `neoradio:1000` for security
-- **Health Checks:** Automated container monitoring
+- **Health Checks:** Automated container monitoring via `/api/metadata`
 - **Port:** 5000 (internal)
 - **Size:** ~451MB
 
@@ -165,66 +226,109 @@ NeoRadio supports containerized deployment with separate configurations for deve
 
 ### Docker Compose Services
 
-#### `dev` Service
+#### `dev` Service (Development with SQLite)
 - **Port Mapping:** `5000:5000`
+- **Database:** SQLite (file-based, volume-mounted)
 - **Volumes:**
-  - Source code mounted for hot reload
-  - Persistent database volume: `neoradio-dev-data`
+  - Source code mounted for hot reload (`./app.py:/app/app.py`, etc.)
+  - Persistent database volume: `neoradio-dev-data:/app/data`
 - **Environment:** `FLASK_ENV=development`, `FLASK_DEBUG=1`
 - **Restart Policy:** `unless-stopped`
 
-#### `prod` Service
-- **Port Mapping:** `8080:5000`
+#### `postgres` Service (Production Database)
+- **Image:** `postgres:16-alpine`
+- **Port:** 5432 (internal only)
 - **Volumes:**
-  - Database only: `neoradio-prod-data`
-  - Source code baked into image
-- **Environment:** `FLASK_ENV=production`, `SECRET_KEY` from env
+  - Data persistence: `postgres-data:/var/lib/postgresql/data`
+  - Initialization: `./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql`
+- **Health Checks:** `pg_isready` verification
+- **Environment:** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` from `.env`
+
+#### `app` Service (Production Application)
+- **Port:** 5000 (internal, proxied by nginx)
+- **Database:** PostgreSQL via `DATABASE_URL` environment variable
+- **Volumes:** None (stateless, database on postgres service)
+- **Environment:**
+  - `FLASK_ENV=production`
+  - `SECRET_KEY` from `.env`
+  - `DATABASE_URL=postgresql://user:pass@postgres:5432/db`
+- **Dependencies:** Waits for postgres health check
 - **Restart Policy:** `always`
-- **Health Checks:** Every 30s with 3 retries
+
+#### `nginx` Service (Production Reverse Proxy)
+- **Image:** `nginx:alpine`
+- **Port Mapping:** `80:80`
+- **Volumes:**
+  - Configuration: `./nginx.conf:/etc/nginx/conf.d/default.conf:ro`
+  - Static files: `./static:/app/static:ro` (direct serving)
+- **Features:**
+  - Gzip compression
+  - Security headers (X-Frame-Options, XSS-Protection)
+  - Static file caching (30 days)
+  - Health check endpoint at `/health`
+- **Restart Policy:** `always`
 
 ### Environment Variables
 
-- `SECRET_KEY` - Flask secret key (required for production)
-- `DATABASE` - Database file path (default: `/app/data/database.db`)
-- `FLASK_ENV` - Flask environment (`development` or `production`)
-- `FLASK_DEBUG` - Debug mode flag (`0` or `1`)
+**Development (SQLite):**
+- `FLASK_ENV=development`
+- `FLASK_DEBUG=1`
+- `DATABASE=/app/data/database.db`
+
+**Production (PostgreSQL):**
+- `SECRET_KEY` - Flask secret key (required)
+- `FLASK_ENV=production`
+- `DATABASE_URL=postgresql://user:pass@postgres:5432/db` - Triggers PostgreSQL mode
+- `POSTGRES_USER` - PostgreSQL username
+- `POSTGRES_PASSWORD` - PostgreSQL password
+- `POSTGRES_DB` - PostgreSQL database name
 
 ### Volume Persistence
 
-- **Development:** `neoradio-dev-data` - Development database and uploaded files
-- **Production:** `neoradio-prod-data` - Production database and uploaded files
+- **Development:** `neoradio-dev-data:/app/data` - SQLite database
+- **Production:** `neoradio-postgres-data:/var/lib/postgresql/data` - PostgreSQL data
 
-Both volumes are Docker-managed and persist data across container restarts.
+All volumes are Docker-managed and persist data across container restarts.
 
 ### Security Features
 
-- Non-root user execution in production
+- Non-root user execution in production (`neoradio:1000`)
 - Secret key management via environment variables
 - Database isolation in Docker volumes
-- Health check monitoring
+- Health check monitoring on all production services
+- Nginx security headers (X-Frame-Options, XSS-Protection, Content-Type-Options)
+- PostgreSQL network isolation (only accessible within Docker network)
 - Resource limits configurable via docker-compose
 
 ### Deployment Workflows
 
-**Quick Development:**
+**Quick Development (SQLite):**
 ```bash
 docker-compose up dev
+# Access at http://localhost:5000/radio
 ```
 
-**Production Deployment:**
+**Production with PostgreSQL + Nginx:**
 ```bash
-# Generate secret key
-export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')
-echo "SECRET_KEY=$SECRET_KEY" > .env
+# 1. Configure environment
+cp .env.example .env
+# Edit .env with your SECRET_KEY and POSTGRES_PASSWORD
 
-# Start production service
-docker-compose up -d prod
+# 2. Start all production services
+docker-compose up -d postgres app nginx
 
-# View logs
-docker-compose logs -f prod
+# 3. View logs
+docker-compose logs -f app
 
-# Check health
-docker inspect --format='{{.State.Health.Status}}' neoradio-prod
+# 4. Access application
+# http://localhost/radio
+```
+
+**Production Architecture Flow:**
+```
+User Request → Nginx (:80) → Flask App (:5000) → PostgreSQL (:5432)
+                ↓
+          Static Files (cached)
 ```
 
 For complete Docker documentation, see [DOCKER.md](DOCKER.md).

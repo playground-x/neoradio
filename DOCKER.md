@@ -2,9 +2,23 @@
 
 This guide explains how to run NeoRadio using Docker for both development and production environments.
 
+## Architecture Overview
+
+### Development Stack
+- **Flask dev server** - Hot reload enabled
+- **SQLite database** - File-based, simple setup
+- Direct access on port 5000
+
+### Production Stack
+- **Nginx** - Reverse proxy and static file serving
+- **Gunicorn** - WSGI HTTP server (4 workers)
+- **PostgreSQL** - Production-grade database
+- **Flask app** - Python application layer
+- Nginx on port 80, app internal on 5000
+
 ## Quick Start
 
-### Development
+### Development (SQLite)
 
 ```bash
 docker-compose up dev
@@ -12,7 +26,20 @@ docker-compose up dev
 
 Access the application at: `http://localhost:5000/radio`
 
-### Production
+### Production (PostgreSQL + Nginx)
+
+```bash
+# Set environment variables
+cp .env.example .env
+# Edit .env with your SECRET_KEY and POSTGRES_PASSWORD
+
+# Start all production services
+docker-compose up postgres app nginx
+```
+
+Access the application at: `http://localhost/radio`
+
+### Production (Legacy - SQLite, no Nginx)
 
 ```bash
 docker-compose up prod
@@ -44,10 +71,15 @@ Access the application at: `http://localhost:8080/radio`
 Create a `.env` file in the project root:
 
 ```bash
-# Required for production
+# Flask Configuration
 SECRET_KEY=your-super-secret-key-here-change-this
 
-# Optional overrides
+# PostgreSQL Configuration (Production)
+POSTGRES_USER=neoradio
+POSTGRES_PASSWORD=your-strong-password-here
+POSTGRES_DB=neoradio
+
+# SQLite Configuration (Development)
 DATABASE=/app/data/database.db
 ```
 
@@ -57,6 +89,69 @@ Use the provided [.env.example](.env.example) as a template:
 cp .env.example .env
 # Edit .env with your values
 ```
+
+## Production Architecture
+
+The production deployment uses a multi-container setup:
+
+```
+                    ┌─────────────┐
+Internet  ──────────► Nginx :80   │
+                    └──────┬──────┘
+                           │
+                    ┌──────▼───────┐
+                    │ Flask App    │
+                    │ Gunicorn     │
+                    │ :5000        │
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │ PostgreSQL   │
+                    │ :5432        │
+                    └──────────────┘
+```
+
+### Components
+
+1. **Nginx (nginx:alpine)**
+   - Serves static files directly
+   - Reverse proxy to Flask app
+   - Port 80 exposed to host
+   - Gzip compression enabled
+   - Security headers configured
+
+2. **Flask App (neoradio:prod)**
+   - Python application with Gunicorn
+   - 4 worker processes
+   - Connects to PostgreSQL
+   - Internal port 5000 (not exposed)
+   - Health checks enabled
+
+3. **PostgreSQL (postgres:16-alpine)**
+   - Production database
+   - Data persisted in Docker volume
+   - Auto-initialization with init-db.sql
+   - Health checks enabled
+
+### Database Migration
+
+When switching from SQLite to PostgreSQL, data migration is required:
+
+1. **Export from SQLite** (optional):
+   ```bash
+   sqlite3 database.db .dump > dump.sql
+   ```
+
+2. **Start PostgreSQL**:
+   ```bash
+   docker-compose up -d postgres
+   ```
+
+3. **Import to PostgreSQL** (if migrating):
+   ```bash
+   # Convert SQLite dump to PostgreSQL format and import
+   # Manual process required for schema differences
+   ```
 
 ## Docker Compose Commands
 
