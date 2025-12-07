@@ -2,6 +2,8 @@
 
 A modern web-based radio player for streaming HLS audio with live metadata display, track history, and community song ratings.
 
+[![CI - Tests and Security](https://github.com/playground-x/neoradio/actions/workflows/ci.yml/badge.svg)](https://github.com/playground-x/neoradio/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/playground-x/neoradio/actions/workflows/security-scan.yml/badge.svg)](https://github.com/playground-x/neoradio/actions/workflows/security-scan.yml)
 ![NeoRadio](https://img.shields.io/badge/status-active-success.svg)
 ![Flask](https://img.shields.io/badge/flask-3.1.2-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.x-blue.svg)
