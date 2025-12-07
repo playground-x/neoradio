@@ -132,8 +132,7 @@ def init_db():
     conn.close()
 
 @app.route('/')
-@app.route('/radio')
-def radio():
+def index():
     """Radio player page"""
     return render_template('radio.html')
 

@@ -1,171 +1,64 @@
 # NeoRadio
 
-A modern web-based radio player for streaming HLS (HTTP Live Streaming) audio with live metadata display, track history, and community song ratings.
+A modern web-based radio player for streaming HLS audio with live metadata display, track history, and community song ratings.
 
-[![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/flask-3.1.2-green.svg)](https://flask.palletsprojects.com/)
-[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![NeoRadio](https://img.shields.io/badge/status-active-success.svg)
+![Flask](https://img.shields.io/badge/flask-3.1.2-blue.svg)
+![Python](https://img.shields.io/badge/python-3.x-blue.svg)
+
+## Overview
+
+NeoRadio is a Flask-based web application that provides a sleek, dark-themed interface for listening to live radio streams. Features include real-time track metadata, album artwork, an animated visualizer, and a community-driven rating system for songs.
 
 ## Features
 
-- **HLS Audio Streaming** - Live radio playback with CloudFront CDN
-- **Live Metadata** - Real-time track information updates every 10 seconds
-- **Album Artwork** - Dynamic cover art display with cache-busting
-- **Animated Visualizer** - 40-bar audio visualizer animation
+- **HLS Audio Streaming** - Lossless quality streaming with auto-recovery from errors
+- **Live Metadata** - Real-time track information (title, artist, album, year)
+- **Album Artwork** - Auto-refreshing cover images for each track
 - **Track History** - Last 10 played tracks with timestamps
-- **Community Ratings** - Thumbs up/down voting system for songs
-- **IP-Based User ID** - Persistent user identification without cookies
-- **Dark Theme** - Purple/blue gradient with modern UI
-- **Responsive Design** - Mobile-friendly layout
+- **Song Ratings** - Community thumbs up/down voting system
+- **Animated Visualizer** - 40-bar audio visualization
+- **Dark Theme** - Modern purple/blue gradient design
+- **Responsive Layout** - Mobile-friendly grid design
+- **IP-Based User Identification** - Persistent ratings without cookies
 
 ## Quick Start
 
-### Docker (Recommended)
+### 1. Clone the Repository
 
-**Development with SQLite:**
 ```bash
-docker-compose up dev
+git clone https://github.com/playground-x/neoradio.git
+cd neoradio
+```
+
+### 2. Create Virtual Environment
+
+**Windows:**
+```bash
+python -m venv venv
+venv\Scripts\activate
 ```
 Access at: http://localhost:5000/radio
 
-**Production with PostgreSQL + Nginx:**
+**Linux/Mac:**
 ```bash
-# 1. Configure environment
-cp .env.example .env
-# Edit .env with your SECRET_KEY and POSTGRES_PASSWORD
-
-# 2. Start all production services
-docker-compose up -d postgres app nginx
+python3 -m venv venv
+source venv/bin/activate
 ```
 Access at: http://localhost/radio
 
-See [DOCKER.md](DOCKER.md) for complete deployment guide including database migration and configuration options.
+### 3. Install Dependencies
 
 ### Local Development
 
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 4. Run the Application
 
 2. **Run the application:**
    ```bash
    python app.py
    ```
 
-3. **Access the player:**
-   - Open browser to `http://127.0.0.1:5000/radio`
-
-## Project Structure
-
-```
-neoradio/
-├── app.py                      # Flask application with routes and API
-├── requirements.txt            # Python dependencies
-├── database.db                 # SQLite database (auto-created)
-├── templates/
-│   └── radio.html             # Radio player interface
-├── static/
-│   ├── css/
-│   │   └── radio.css          # Player styling
-│   └── js/
-│       └── radio.js           # Player functionality
-├── tests/                      # Test suite (pytest)
-│   ├── conftest.py            # Test fixtures
-│   ├── test_database.py       # Database tests
-│   ├── test_routes.py         # API endpoint tests
-│   └── test_user_identification.py  # User ID tests
-├── Dockerfile                  # Production Docker image
-├── Dockerfile.dev              # Development Docker image
-├── docker-compose.yml          # Docker orchestration (dev + prod stacks)
-├── .dockerignore              # Docker build exclusions
-├── .env.example               # Environment variable template
-├── init-db.sql                # PostgreSQL initialization script
-├── nginx.conf                 # Nginx reverse proxy configuration
-├── pytest.ini                 # Test configuration
-├── DOCKER.md                  # Docker deployment guide
-├── CLAUDE.md                  # Technical documentation
-└── README.md                  # This file
-```
-
-## Technology Stack
-
-- **Backend:** Flask 3.1.2, SQLite/PostgreSQL (dual database support)
-- **Frontend:** Vanilla JavaScript, HLS.js, CSS Grid
-- **Deployment:** Docker, Docker Compose, Nginx, Gunicorn
-- **Testing:** pytest (29 tests, 73% coverage)
-```
-
-## API Endpoints
-
-### `GET /radio`
-Radio player interface
-
-### `GET /api/metadata`
-Fetches current track metadata from stream server
-
-**Response:**
-```json
-{
-  "source": "api",
-  "data": {
-    "title": "Song Title",
-    "artist": "Artist Name",
-    "album": "Album Name",
-    "date": "2024"
-  }
-}
-```
-
-### `POST /api/songs/rating`
-Submit or update a song rating
-
-**Request:**
-```json
-{
-  "title": "Song Title",
-  "artist": "Artist Name",
-  "album": "Album Name",
-  "year": "2024",
-  "rating": 1
-}
-```
-- `rating`: 1 for thumbs up, -1 for thumbs down
-
-**Response:**
-```json
-{
-  "success": true,
-  "thumbs_up": 42,
-  "thumbs_down": 5
-}
-```
-
-### `GET /api/songs/rating/<title>/<artist>`
-Get rating counts and user's rating for a song
-
-**Response:**
-```json
-{
-  "thumbs_up": 42,
-  "thumbs_down": 5,
-  "user_rating": 1
-}
-```
-
-## Database Schema
-
-NeoRadio supports both SQLite (development) and PostgreSQL (production) with identical schema.
-
-### songs
-| Column | Type | Description |
-|--------|------|-------------|
-| id | SERIAL/AUTOINCREMENT | Primary key |
-| title | TEXT | Song title |
-| artist | TEXT | Artist name |
-| album | TEXT | Album name (optional) |
-| year | TEXT | Release year (optional) |
+The server will start at: **http://127.0.0.1:5000**
 
 **Constraints:** UNIQUE(title, artist)
 
@@ -227,107 +120,65 @@ This approach:
 
 ## Color Scheme
 
-- **Background:** Gradient `#2d2b6b` → `#49264e`
-- **Cards:** Dark `#1a1a1a` with `#252525` sections
-- **Accents:** Purple/blue `#7b8ff7`
-- **Buttons:** Blue `#5568d3`, Red `#c62828`
-- **Success:** Green `#4caf50`
-- **Error:** Red `#ff5252`
-
-## Running Tests
-
-```bash
-# Install test dependencies
-pip install -r requirements.txt
-
-# Run all tests
-python -m pytest -v
-
-# Run with coverage
-python -m pytest --cov=app --cov-report=html
-
-# View coverage report
-open htmlcov/index.html
-```
-
-**Test Coverage:** 73% on app.py (29 tests passing)
-
-## Configuration
-
-### Environment Variables
-
-- `SECRET_KEY` - Flask secret key (required for production)
-- `DATABASE` - Database file path (default: `database.db`)
-
-### Stream Configuration
-
-Edit [app.py](app.py) to change stream URLs:
-- **Stream URL:** `https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8`
-- **Metadata URL:** `https://d3d4yli4hf5bmh.cloudfront.net/metadata`
-- **Album Art URL:** `https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg`
-
-## Browser Support
-
-- **Chrome/Edge:** HLS.js required ✅
-- **Firefox:** HLS.js required ✅
-- **Safari:** Native HLS support ✅
-- **Mobile:** Responsive design ✅
-
-## Deployment
-
-### Docker (Production)
-
-See [DOCKER.md](DOCKER.md) for complete deployment guide.
-
-Quick start:
-```bash
-# Set secret key
-export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')
-
-# Run production container
-docker-compose up -d prod
-```
-
-### Traditional Deployment
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Set environment variables
-export SECRET_KEY=your-secret-key
-export FLASK_ENV=production
-
-# Run with gunicorn
-gunicorn --bind 0.0.0.0:5000 --workers 4 app:app
-```
+- Flask web framework
+- SQLite database (no separate database server needed)
+- RESTful API endpoints
+- Automatic database initialisation
+- Interactive web UI for testing
 
 ## Development
 
-The application runs in debug mode when executed directly:
+### Debug Mode
+The server runs in debug mode by default:
 - Auto-reloads on code changes
 - Detailed error messages
 - Interactive debugger
 
-Hot reload is enabled in Docker dev mode via volume mounting.
+### Metadata Polling
+JavaScript polls for metadata every 10 seconds to keep track info current.
+
+### Database Auto-Initialization
+The database is automatically created on first run with all required tables.
+
+## Color Scheme
+
+- **Background Gradient:** `#2d2b6b` → `#49264e`
+- **Cards:** `#1a1a1a`
+- **Sections:** `#252525`
+- **Accent:** `#7b8ff7` (purple/blue)
+- **Buttons:** `#5568d3` (blue), `#c62828` (red)
+- **Success:** `#4caf50` (green)
+- **Error:** `#ff5252` (red)
+
+## Browser Support
+
+- **Chrome/Edge:** Requires HLS.js
+- **Firefox:** Requires HLS.js
+- **Safari:** Native HLS support
+- **Mobile:** Full responsive design
 
 ## Documentation
 
-- [DOCKER.md](DOCKER.md) - Docker deployment guide
-- [CLAUDE.md](CLAUDE.md) - Detailed technical documentation
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests: `pytest`
-5. Submit a pull request
+For detailed technical documentation, see [CLAUDE.md](CLAUDE.md) which includes:
+- Complete architecture overview
+- API endpoint specifications
+- Database schema details
+- Security considerations
+- Troubleshooting guide
+- Future enhancement ideas
 
 ## License
 
-MIT License - See LICENSE file for details
+[Specify your license here]
 
-## Support
+## Contributing
 
-For issues or questions, please open an issue on GitHub.
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Contact
+
+[Your contact information]
+
+## Acknowledgments
+
+Built with [Claude Code](https://claude.com/claude-code)
