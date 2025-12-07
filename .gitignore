@@ -24,3 +24,14 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Security reports
+security-report.json
+
+# Node modules
+node_modules/
+
+# Test coverage
+htmlcov/
+.coverage
+.pytest_cache/

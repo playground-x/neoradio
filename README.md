@@ -30,18 +30,39 @@ python app.py
 
 The server will start at: http://127.0.0.1:5000
 
+### 4. Run Security Scans (Optional)
+
+```bash
+# Run npm audit for Node.js dependencies
+npm run security
+
+# Run all security scans (npm + Python)
+npm run security:all
+
+# Run Python security scan only
+python security_scan.py
+```
+
+See [SECURITY.md](SECURITY.md) for detailed security scanning documentation.
+
 ## Project Structure
 
 ```
 neoradio/
-├── venv/              # Virtual environment (not committed)
-├── app.py             # Flask application with API routes
-├── database.db        # SQLite database (created on first run)
-├── templates/         # HTML templates
-│   └── index.html     # Main page with demo UI
-├── static/            # Static files (CSS, JS, images)
-├── requirements.txt   # Python dependencies
-└── README.md          # This file
+├── venv/                # Virtual environment (not committed)
+├── app.py               # Flask application with API routes
+├── database.db          # SQLite database (created on first run)
+├── templates/           # HTML templates
+│   └── index.html       # Main page with demo UI
+├── static/              # Static files (CSS, JS, images)
+├── requirements.txt     # Python dependencies
+├── package.json         # npm configuration & security scripts
+├── package-lock.json    # npm dependency lock file
+├── security_scan.py     # Python security scanner
+├── security.ps1         # PowerShell security script (Windows)
+├── Makefile             # Make targets for security & development
+├── SECURITY.md          # Security scanning documentation
+└── README.md            # This file
 ```
 
 ## API Endpoints

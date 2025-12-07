@@ -1,0 +1,29 @@
+{
+  "name": "neoradio",
+  "version": "1.0.0",
+  "description": "A modern web-based radio player for streaming HLS audio with live metadata display",
+  "scripts": {
+    "security": "npm audit --audit-level=moderate",
+    "security:fix": "npm audit fix",
+    "security:check": "npm audit --json > security-report.json && echo Security audit complete",
+    "security:all": "npm run security && npm run security:python",
+    "security:python": "python -m pip check && python security_scan.py",
+    "test": "echo \"No frontend tests yet\"",
+    "lint:security": "npm audit --audit-level=high --json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/playground-x/neoradio.git"
+  },
+  "keywords": [
+    "radio",
+    "hls",
+    "streaming",
+    "flask",
+    "metadata"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}
