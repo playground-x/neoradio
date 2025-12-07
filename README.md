@@ -38,28 +38,87 @@ cd neoradio
 python -m venv venv
 venv\Scripts\activate
 ```
+Access at: http://localhost:5000/radio
 
 **Linux/Mac:**
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
+Access at: http://localhost/radio
 
 ### 3. Install Dependencies
 
-```bash
-pip install -r requirements.txt
-```
+### Local Development
 
 ### 4. Run the Application
 
-```bash
-python app.py
-```
+2. **Run the application:**
+   ```bash
+   python app.py
+   ```
 
 The server will start at: **http://127.0.0.1:5000**
 
-## Features
+**Constraints:** UNIQUE(title, artist)
+
+### ratings
+| Column | Type | Description |
+|--------|------|-------------|
+| id | SERIAL/AUTOINCREMENT | Primary key |
+| song_id | INTEGER | Foreign key to songs.id |
+| user_id | TEXT | SHA256 hash of IP + User-Agent |
+| rating | INTEGER | 1 (thumbs up) or -1 (thumbs down) |
+| created_at | TIMESTAMP | Rating timestamp |
+
+**Constraints:**
+- UNIQUE(song_id, user_id) - Prevents duplicate ratings
+- CHECK(rating IN (1, -1)) - Enforces valid rating values
+- Foreign key cascade on delete
+
+**PostgreSQL Performance Indexes:**
+- `idx_ratings_song_id` on `ratings.song_id`
+- `idx_ratings_user_id` on `ratings.user_id`
+- `idx_songs_artist` on `songs.artist`
+- `idx_songs_title` on `songs.title`
+
+## User Identification
+
+NeoRadio uses IP-based fingerprinting to prevent rating manipulation:
+
+1. Extracts client IP (handles `X-Forwarded-For` for proxies)
+2. Combines with User-Agent string
+3. Creates SHA256 hash: `hashlib.sha256(f"{ip}:{user_agent}".encode())`
+4. Uses first 32 characters as `user_id`
+
+This approach:
+- Prevents cookie clearing exploits
+- Maintains user privacy through hashing
+- Persists across browser sessions
+- Requires IP/browser change to bypass
+
+## Technology Stack
+
+**Backend:**
+- Flask 3.1.2 - Python web framework
+- SQLite - Embedded database
+- Requests 2.32.5 - HTTP library
+- Gunicorn 21.2.0 - WSGI HTTP server (production)
+
+**Frontend:**
+- HLS.js - JavaScript HLS stream playback
+- Vanilla JavaScript - No framework dependencies
+- CSS Grid - Responsive layout
+
+**Testing:**
+- pytest 8.3.4 - Testing framework
+- pytest-cov 6.0.0 - Coverage reporting
+
+**Deployment:**
+- Docker - Containerization
+- Docker Compose - Multi-container orchestration
+
+## Color Scheme
 
 - Flask web framework
 - SQLite database (no separate database server needed)

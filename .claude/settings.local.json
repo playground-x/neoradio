@@ -10,7 +10,13 @@
       "Bash(python app.py:*)",
       "Bash(pip install:*)",
       "Bash(python -m pip install:*)",
-      "Bash(python -m pip:*)"
+      "Bash(python -m pip:*)",
+      "Bash(grep:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd comprehensive test suite with pytest\n\n- Add pytest configuration with coverage reporting\n- Create test fixtures for isolated test database\n- Add 29 tests across 3 test files\n- Database tests: schema verification, constraints, CRUD operations\n- Route tests: radio page, metadata API, ratings API\n- User identification tests: IP + User-Agent fingerprinting\n- Update requirements.txt with pytest dependencies\n- Handle Windows-specific database locking in test teardown\n- Achieve 73% code coverage on app.py\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(gh issue view:*)"
     ],
     "deny": [],
     "ask": []
