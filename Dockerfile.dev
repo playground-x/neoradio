@@ -1,0 +1,32 @@
+# Development Dockerfile for NeoRadio
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FLASK_APP=app.py \
+    FLASK_ENV=development \
+    FLASK_DEBUG=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies including dev dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create directory for database
+RUN mkdir -p /app/data
+
+# Expose port
+EXPOSE 5000
+
+# Run Flask development server with hot reload
+CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5000", "--reload"]
