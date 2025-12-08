@@ -1,3 +1,7 @@
+// Environment-based debug logging
+const DEBUG = false; // Set to true for development, false for production
+const log = DEBUG ? console.log.bind(console) : () => {};
+
 const streamUrl = 'https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8';
 const audio = document.getElementById('audio');
 const statusEl = document.getElementById('status');
@@ -7,6 +11,7 @@ const connectionStatus = document.getElementById('connectionStatus');
 let hls;
 let trackHistory = [];
 let currentTrack = null;
+let previousAlbum = null;
 
 // Initialize visualizer bars
 const visualizer = document.getElementById('visualizer');
@@ -69,28 +74,28 @@ function playStream() {
 
         // Listen for ID3 metadata tags (track info)
         hls.on(Hls.Events.FRAG_PARSING_METADATA, function(event, data) {
-            console.log('=== METADATA EVENT ===');
-            console.log('Full event data:', JSON.stringify(data, null, 2));
-            console.log('Raw metadata object:', data);
+            log('=== METADATA EVENT ===');
+            log('Full event data:', JSON.stringify(data, null, 2));
+            log('Raw metadata object:', data);
 
             if (data.samples && data.samples.length > 0) {
                 data.samples.forEach((sample, index) => {
-                    console.log(`Sample ${index}:`, sample);
-                    console.log(`Sample type:`, sample.type);
-                    console.log(`Sample data:`, sample.data);
+                    log(`Sample ${index}:`, sample);
+                    log(`Sample type:`, sample.type);
+                    log(`Sample data:`, sample.data);
 
                     if (sample.data) {
-                        console.log('Data keys:', Object.keys(sample.data));
-                        console.log('Full data object:', JSON.stringify(sample.data, null, 2));
+                        log('Data keys:', Object.keys(sample.data));
+                        log('Full data object:', JSON.stringify(sample.data, null, 2));
 
                         // Log each property
                         for (let key in sample.data) {
                             const value = sample.data[key];
-                            console.log(`  ${key}:`, value);
+                            log(`  ${key}:`, value);
                             if (typeof value === 'object') {
-                                console.log(`    ${key} type:`, typeof value);
-                                console.log(`    ${key} keys:`, Object.keys(value));
-                                console.log(`    ${key} full:`, JSON.stringify(value, null, 2));
+                                log(`    ${key} type:`, typeof value);
+                                log(`    ${key} keys:`, Object.keys(value));
+                                log(`    ${key} full:`, JSON.stringify(value, null, 2));
                             }
                         }
 
@@ -98,12 +103,12 @@ function playStream() {
                     }
                 });
             }
-            console.log('=== END METADATA ===');
+            log('=== END METADATA ===');
         });
 
         // Also listen for all HLS events to debug
         hls.on(Hls.Events.FRAG_LOADED, function(event, data) {
-            console.log('Fragment loaded, checking for metadata...');
+            log('Fragment loaded, checking for metadata...');
         });
 
         hls.on(Hls.Events.ERROR, function(event, data) {
@@ -131,7 +136,7 @@ function playStream() {
 
         // Listen for metadata in Safari
         audio.addEventListener('loadedmetadata', function() {
-            console.log('Native HLS metadata loaded');
+            log('Native HLS metadata loaded');
             if (audio.textTracks) {
                 for (let i = 0; i < audio.textTracks.length; i++) {
                     const track = audio.textTracks[i];
@@ -139,7 +144,7 @@ function playStream() {
                         track.addEventListener('cuechange', function() {
                             const cue = track.activeCues[0];
                             if (cue && cue.value) {
-                                console.log('Cue metadata:', cue.value);
+                                log('Cue metadata:', cue.value);
                                 parseID3Metadata(cue.value);
                             }
                         });
@@ -265,7 +270,7 @@ async function fetchMetadataFromAPI() {
         }
 
         const data = await response.json();
-        console.log('API metadata response:', data);
+        log('API metadata response:', data);
 
         if (data.data) {
             // Parse the API response
@@ -273,12 +278,12 @@ async function fetchMetadataFromAPI() {
         }
     } catch (error) {
         // Silently fail - no metadata API available
-        console.log('No metadata API available');
+        log('No metadata API available');
     }
 }
 
 function parseAPIMetadata(data) {
-    console.log('Parsing API metadata:', data);
+    log('Parsing API metadata:', data);
 
     const track = {};
 
@@ -290,21 +295,21 @@ function parseAPIMetadata(data) {
 
     // Only update if we have at least a title or artist
     if (track.title || track.artist) {
-        console.log('Track data from API:', track);
+        log('Track data from API:', track);
         updateTrackInfo(track);
     } else {
-        console.log('No track data found in metadata');
+        log('No track data found in metadata');
     }
 }
 
 // Parse ID3 metadata from HLS stream
 function parseID3Metadata(metadata) {
     if (!metadata) {
-        console.log('No metadata provided');
+        log('No metadata provided');
         return;
     }
 
-    console.log('Parsing metadata:', metadata);
+    log('Parsing metadata:', metadata);
     const track = {};
     let hasData = false;
 
@@ -313,7 +318,7 @@ function parseID3Metadata(metadata) {
     if (typeof metadata === 'object') {
         // ID3 tags common in streaming (case-insensitive check)
         const keys = Object.keys(metadata);
-        console.log('Metadata keys:', keys);
+        log('Metadata keys:', keys);
 
         // Check for common ID3 tags
         for (let key of keys) {
@@ -341,7 +346,7 @@ function parseID3Metadata(metadata) {
             // StreamTitle format (common in Icecast/Shoutcast)
             if (upperKey === 'STREAMTITLE' || key === 'StreamTitle') {
                 const streamTitle = value.data || value;
-                console.log('StreamTitle found:', streamTitle);
+                log('StreamTitle found:', streamTitle);
                 // Parse "Artist - Title" format
                 const parts = streamTitle.split(' - ');
                 if (parts.length >= 2) {
@@ -355,16 +360,16 @@ function parseID3Metadata(metadata) {
 
             // TXXX frames (custom tags)
             if (upperKey === 'TXXX') {
-                console.log('TXXX frame:', value);
+                log('TXXX frame:', value);
             }
         }
     }
 
     if (hasData) {
-        console.log('Track data extracted:', track);
+        log('Track data extracted:', track);
         updateTrackInfo(track);
     } else {
-        console.log('No track data found in metadata');
+        log('No track data found in metadata');
     }
 }
 
@@ -390,9 +395,12 @@ function updateTrackInfo(trackData) {
         currentTrack = track;
         addToHistory(track);
 
-        // Refresh album art with cache-busting timestamp
+        // Only refresh album art if album actually changed (better caching)
         const albumArt = document.getElementById('albumArt');
-        albumArt.src = `https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg?t=${Date.now()}`;
+        if (track.album !== previousAlbum) {
+            albumArt.src = `https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg?v=${encodeURIComponent(track.album || 'default')}`;
+            previousAlbum = track.album;
+        }
 
         // Load rating for this track
         loadSongRating(track.title, track.artist);
@@ -465,7 +473,7 @@ function updateAudioQuality(levelIndex) {
     // Try to get audio track info from the audio element
     if (audio.audioTracks && audio.audioTracks.length > 0) {
         const track = audio.audioTracks[0];
-        console.log('Audio track info:', track);
+        log('Audio track info:', track);
     }
 
     // Set sample rate and channels (common for lossless)
@@ -484,7 +492,7 @@ async function loadInitialMetadata() {
             }
         }
     } catch (error) {
-        console.log('Could not load initial metadata:', error);
+        log('Could not load initial metadata:', error);
     }
 }
 
