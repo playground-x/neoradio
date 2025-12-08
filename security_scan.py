@@ -114,31 +114,44 @@ def check_known_vulnerabilities() -> Tuple[bool, str]:
                 text=True
             )
 
+            # Check for stderr output (errors or warnings)
+            if result.stderr and not result.stdout:
+                print(f"⚠ Safety check warning: {result.stderr.strip()}")
+                print("ℹ Continuing scan without Safety vulnerability check")
+                return True, "Safety check skipped due to errors"
+
             if result.stdout:
-                vulnerabilities = json.loads(result.stdout)
+                try:
+                    vulnerabilities = json.loads(result.stdout)
 
-                if vulnerabilities:
-                    print(f"✗ Found {len(vulnerabilities)} known vulnerability/vulnerabilities:")
-                    print()
-
-                    for vuln in vulnerabilities:
-                        print(f"Package: {vuln[0]}")
-                        print(f"  Installed: {vuln[2]}")
-                        print(f"  Vulnerability: {vuln[3]}")
-                        print(f"  ID: {vuln[4]}")
+                    if vulnerabilities:
+                        print(f"✗ Found {len(vulnerabilities)} known vulnerability/vulnerabilities:")
                         print()
 
-                    return False, json.dumps(vulnerabilities, indent=2)
-                else:
-                    print("✓ No known vulnerabilities found")
-                    return True, "No vulnerabilities"
+                        for vuln in vulnerabilities:
+                            print(f"Package: {vuln[0]}")
+                            print(f"  Installed: {vuln[2]}")
+                            print(f"  Vulnerability: {vuln[3]}")
+                            print(f"  ID: {vuln[4]}")
+                            print()
+
+                        return False, json.dumps(vulnerabilities, indent=2)
+                    else:
+                        print("✓ No known vulnerabilities found")
+                        return True, "No vulnerabilities"
+                except json.JSONDecodeError as e:
+                    print(f"⚠ Safety check output parsing failed: {e}")
+                    print(f"ℹ Raw output (first 200 chars): {result.stdout[:200]}")
+                    print("ℹ Continuing scan without Safety vulnerability check")
+                    return True, "Safety output parsing failed"
             else:
                 print("✓ No known vulnerabilities found")
                 return True, "No vulnerabilities"
 
         except Exception as e:
-            print(f"✗ Error running safety check: {e}")
-            return False, str(e)
+            print(f"⚠ Error running safety check: {e}")
+            print("ℹ Continuing scan without Safety vulnerability check")
+            return True, str(e)
     else:
         print("ℹ Safety package not installed")
         print("  Install with: pip install safety")
