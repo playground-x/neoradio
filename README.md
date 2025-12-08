@@ -39,7 +39,7 @@ graph LR
 **For complete architecture documentation with 8 detailed diagrams, see [ARCHITECTURE.md](ARCHITECTURE.md)**
 
 Key architectural features:
-- **Optimized Performance**: Resource hints, deferred loading, smart caching (50% faster FCP)
+- **Optimised Performance**: Resource hints, deferred loading, smart caching (50% faster FCP)
 - **Dual Environments**: SQLite for dev, PostgreSQL + Nginx for production
 - **Security First**: Automated CI/CD with npm audit, Safety, Bandit, and CodeQL
 - **IP Fingerprinting**: SHA256-based user identification for persistent ratings
