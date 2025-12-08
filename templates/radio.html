@@ -4,8 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NeoRadio - Live Stream</title>
+
+    <!-- Resource hints for faster loading -->
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://d3d4yli4hf5bmh.cloudfront.net">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://d3d4yli4hf5bmh.cloudfront.net" crossorigin>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/radio.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- Defer HLS.js to prevent render blocking, use specific version for cache stability -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js" defer></script>
 </head>
 <body>
     <div class="header">
