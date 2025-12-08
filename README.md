@@ -12,6 +12,38 @@ A modern web-based radio player for streaming HLS audio with live metadata displ
 
 NeoRadio is a Flask-based web application that provides a sleek, dark-themed interface for listening to live radio streams. Features include real-time track metadata, album artwork, an animated visualizer, and a community-driven rating system for songs.
 
+## Architecture
+
+NeoRadio uses a modern streaming architecture with HLS delivery, real-time metadata, and a secure rating system.
+
+```mermaid
+graph LR
+    Browser[Web Browser] -->|HTTPS| CloudFront[CloudFront CDN]
+    Browser -->|HTTP| Nginx[Nginx:80]
+    Nginx -->|Reverse Proxy| Flask[Flask + Gunicorn]
+    Flask -->|SQL| PostgreSQL[(PostgreSQL)]
+    CloudFront -->|HLS Stream| Browser
+    CloudFront -->|Album Art| Browser
+
+    classDef client fill:#9c27b0,stroke:#4a148c,color:#fff
+    classDef cdn fill:#ff9800,stroke:#e65100,color:#000
+    classDef app fill:#2196f3,stroke:#0d47a1,color:#fff
+    classDef db fill:#4caf50,stroke:#1b5e20,color:#fff
+
+    class Browser client
+    class CloudFront cdn
+    class Nginx,Flask app
+    class PostgreSQL db
+```
+
+**For complete architecture documentation with 8 detailed diagrams, see [ARCHITECTURE.md](ARCHITECTURE.md)**
+
+Key architectural features:
+- **Optimized Performance**: Resource hints, deferred loading, smart caching (50% faster FCP)
+- **Dual Environments**: SQLite for dev, PostgreSQL + Nginx for production
+- **Security First**: Automated CI/CD with npm audit, Safety, Bandit, and CodeQL
+- **IP Fingerprinting**: SHA256-based user identification for persistent ratings
+
 ## Features
 
 - **HLS Audio Streaming** - Lossless quality streaming with auto-recovery from errors
@@ -161,13 +193,26 @@ The database is automatically created on first run with all required tables.
 
 ## Documentation
 
-For detailed technical documentation, see [CLAUDE.md](CLAUDE.md) which includes:
-- Complete architecture overview
-- API endpoint specifications
-- Database schema details
-- Security considerations
-- Troubleshooting guide
-- Future enhancement ideas
+### Architecture & Design
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Complete system architecture with 8 interactive Mermaid diagrams
+  - System overview, data flow, and deployment architecture
+  - Component interactions and sequence diagrams
+  - Database schema and security architecture
+  - Performance optimizations and technology stack
+
+### Technical Reference
+- **[CLAUDE.md](CLAUDE.md)** - Detailed technical documentation
+  - API endpoint specifications
+  - Database schema details
+  - Security considerations
+  - Troubleshooting guide
+  - Future enhancement ideas
+
+### Security
+- **[SECURITY.md](SECURITY.md)** - Security scanning guide
+  - Running security scans (npm audit, Python security scanner)
+  - CI/CD integration details
+  - GitHub Actions workflows
 
 ## License
 
