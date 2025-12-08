@@ -152,14 +152,6 @@ This approach:
 - Docker - Containerization
 - Docker Compose - Multi-container orchestration
 
-## Color Scheme
-
-- Flask web framework
-- SQLite database (no separate database server needed)
-- RESTful API endpoints
-- Automatic database initialisation
-- Interactive web UI for testing
-
 ## Development
 
 ### Debug Mode
@@ -173,23 +165,6 @@ JavaScript polls for metadata every 10 seconds to keep track info current.
 
 ### Database Auto-Initialization
 The database is automatically created on first run with all required tables.
-
-## Color Scheme
-
-- **Background Gradient:** `#2d2b6b` → `#49264e`
-- **Cards:** `#1a1a1a`
-- **Sections:** `#252525`
-- **Accent:** `#7b8ff7` (purple/blue)
-- **Buttons:** `#5568d3` (blue), `#c62828` (red)
-- **Success:** `#4caf50` (green)
-- **Error:** `#ff5252` (red)
-
-## Browser Support
-
-- **Chrome/Edge:** Requires HLS.js
-- **Firefox:** Requires HLS.js
-- **Safari:** Native HLS support
-- **Mobile:** Full responsive design
 
 ## Documentation
 
@@ -214,18 +189,6 @@ The database is automatically created on first run with all required tables.
   - CI/CD integration details
   - GitHub Actions workflows
 
-## License
-
-[Specify your license here]
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Contact
-
-[Your contact information]
-
-## Acknowledgments
-
-Built with [Claude Code](https://claude.com/claude-code)
