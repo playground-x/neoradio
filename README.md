@@ -173,7 +173,7 @@ The database is automatically created on first run with all required tables.
   - System overview, data flow, and deployment architecture
   - Component interactions and sequence diagrams
   - Database schema and security architecture
-  - Performance optimizations and technology stack
+  - Performance optimisations and technology stack
 
 ### Technical Reference
 - **[CLAUDE.md](CLAUDE.md)** - Detailed technical documentation
