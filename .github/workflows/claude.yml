@@ -1,0 +1,36 @@
+name: Claude Code Assistant
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  claude:
+    runs-on: ubuntu-latest
+    # Only run when @claude is mentioned or on PR events
+    if: |
+      github.event_name == 'pull_request' ||
+      github.event_name == 'issues' ||
+      contains(github.event.comment.body, '@claude')
+
+    steps:
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          # Use Claude Sonnet 4.5 (default) or Opus 4.5 for more complex tasks
+          model: claude-sonnet-4-5-20250929
+          # Anthropic API key stored in GitHub Secrets
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # GitHub token for repository access
+          github_token: ${{ secrets.GITHUB_TOKEN }}
